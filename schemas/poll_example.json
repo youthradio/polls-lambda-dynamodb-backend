@@ -1,0 +1,20 @@
+{
+    "poll_id":"a4032c04-3acc-4612-a7fd-c33f3a595043",
+    "title": "First pool",
+    "main_question": "What could happen if machines learned how to be “human”?",
+    "options":[
+        {
+            "id": "857732bc-3647-4051-b75c-fcbbb08db4f4",
+            "count": 0,
+            "text": "It might as well be the end of the world." 
+        },
+        {
+            "id": "85b2759b-6f90-492a-b072-303b142e0c44",
+            "count": 0,
+            "text": "We could be best friends with them!!!" 
+        }
+    ]
+}
+
+
+

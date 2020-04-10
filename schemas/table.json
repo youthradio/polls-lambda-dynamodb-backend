@@ -1,0 +1,19 @@
+{
+    "TableName": "POLLS_TABLE",
+    "KeySchema": [
+      {
+        "AttributeName": "poll_id",
+        "KeyType": "HASH"
+      }
+    ],
+    "AttributeDefinitions": [
+        {
+            "AttributeName": "poll_id",
+            "AttributeType": "S"
+        }
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 1,
+        "WriteCapacityUnits": 1
+    }
+  }
