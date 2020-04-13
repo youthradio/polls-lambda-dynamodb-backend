@@ -13,12 +13,23 @@ const { session, options } = require('./config/sessionConfig')(dynamodb);
 const Poll = require('./model/pollModel')(dynamodb);
 const { uuidPattern } = require('./utils');
 
-const corsOptions = {
-  origin: '*',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
+const whitelist = [
+  `http://localhost:${process.env.PORT}`,
+  'https://radames.static.observableusercontent.com',
+];
+
+const corsOptionsDelegate = (req, callback) => {
+  console.log(req.header('Origin'))
+  const corsOptions = {
+    origin: whitelist.includes(req.header('Origin')),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true,
+  };
+  return callback(null, corsOptions); // callback expects two parameters: error and options
 };
+
 const app = express();
 
 if (!process.env.MODE === 'dev') {
@@ -27,7 +38,7 @@ if (!process.env.MODE === 'dev') {
 
 app.disable('x-powered-by');
 app.use(session(options));
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 app.get('/', (req, res) => {
   if (req.session.views) {
@@ -45,7 +56,8 @@ app.get('/', (req, res) => {
 app.get('/get', async (req, res, next) => {
   try {
     const poll = await Poll.scan().exec();
-    res.json(poll);
+    res.header('Content-Type', 'application/json');
+    res.send(JSON.stringify(poll, null, 4));
   } catch (err) {
     console.log(err);
     res.statusCode = 500;
@@ -83,44 +95,43 @@ app.get('/create', async (req, res, next) => {
     res.err({ msg: new Error('error creating POLL'), err: err });
   }
 });
-app.get('/update_poll/:id', async (req, res, next) => {
-  const pollid = req.params.id;
 
-  if (!uuidPattern.test(pollid)) {
+app.get('/vote_poll/:id/:vote', async (req, res, next) => {
+  const poll_id = req.params.id;
+  const vote_id = req.params.vote;
+  if (!uuidPattern.test(poll_id) && !uuidPattern.test(vote_id)) {
     res.status(500);
-    res.json({ msg: 'invalid id'});
+    res.json({ msg: 'invalid ids' });
   }
 
-  const pollinfo = await Poll.scan(
+  const selectedPoll = await Poll.get({
+    poll_id: poll_id,
+  });
+
+  // check if user has already voted
+  if (req.session.voted_polls && req.session.voted_polls.includes(poll_id)) {
+    res.header('Content-Type', 'application/json');
+    res.send(JSON.stringify({ hasvoted: true, poll: selectedPoll }, null, 4));
+    return;
+  } else {
+    req.session.voted_polls = [];
+    req.session.voted_polls.push(poll_id);
+  }
+
+  const options = selectedPoll.options.map((option) => {
+    // if voted poll then add 1 otherwise pass
+    const newcount = option.id === vote_id ? option.count + 1 : option.count;
+    return Object.assign(option, { count: newcount });
+  });
+
+  await Poll.update(
     {
-      EMAIL: { eq: res.EMAIL },
-      MOBILE: { eq: res.MOBILE },
+      poll_id: poll_id,
     },
-    { conditionalOperator: 'OR' }
-  ).exec();
-
-  existing_user.forEach((user) => {
-    user_id = user.USER_ID;
-  });
-
-  if (!user_id) {
-    user_id = uuidv1();
-  }
-
-  const user = new User({
-    USER_ID: user_id,
-    TITLE: res.TITLE,
-    NAME: res.NAME,
-    EMAIL: res.EMAIL,
-    MOBILE: res.MOBILE,
-    COMPANY: res.COMPANY,
-    ADDRESS: res.ADDRESS,
-    INTEREST: res.INTEREST,
-  });
-
-  await user.save();
-
-  return user_id;
+    { options: options }
+  );
+  res.header('Content-Type', 'application/json');
+  res.send(JSON.stringify({ hasvoted: false, poll: selectedPoll }, null, 4));
 });
 
 module.exports = app;

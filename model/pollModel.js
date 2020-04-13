@@ -1,5 +1,5 @@
 const dynamoose = require('dynamoose');
-const { uuidPattern }  = require('./../utils')
+const { uuidPattern } = require('./../utils');
 
 module.exports = function (dynamodb) {
   dynamoose.setDDB(dynamodb);
@@ -46,7 +46,7 @@ module.exports = function (dynamodb) {
         ],
       },
     },
-    { saveUnknown: true, useDocumentTypes: true }
+    { saveUnknown: true, useDocumentTypes: true , timestamps : true}
   );
 
   const Poll = dynamoose.model('POLLS_TABLE', pollSchema);
