@@ -19,7 +19,7 @@ module.exports = function (dynamodb) {
     },
     store: new DynamoDBStore(sessionStoreOptions),
     secret: process.env.COOKIE_SECRET,
-    cookie: { maxAge: 60000, secure: !isDev },
+    cookie: { secure: !isDev },
     resave: false,
     saveUninitialized: false,
   };

@@ -14,12 +14,13 @@ const Poll = require('./model/pollModel')(dynamodb);
 const { uuidPattern } = require('./utils');
 
 const whitelist = [
+  'http://localhost:3000',
   `http://localhost:${process.env.PORT}`,
   'https://radames.static.observableusercontent.com',
 ];
 
 const corsOptionsDelegate = (req, callback) => {
-  console.log(req.header('Origin'))
+  console.log(req.header('Origin'));
   const corsOptions = {
     origin: whitelist.includes(req.header('Origin')),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -39,6 +40,8 @@ if (!process.env.MODE === 'dev') {
 app.disable('x-powered-by');
 app.use(session(options));
 app.use(cors(corsOptionsDelegate));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.get('/', (req, res) => {
   if (req.session.views) {
@@ -53,7 +56,7 @@ app.get('/', (req, res) => {
   }
 });
 
-app.get('/get', async (req, res, next) => {
+app.get('/getAll', async (req, res, next) => {
   try {
     const poll = await Poll.scan().exec();
     res.header('Content-Type', 'application/json');
@@ -65,26 +68,35 @@ app.get('/get', async (req, res, next) => {
   }
 });
 
-app.get('/create', async (req, res, next) => {
+app.post('/create', async (req, res, next) => {
+  const bodyData = req.body;
+  if (!bodyData) {
+    res.status(500);
+    return res.json({ err: true, msg: 'NO DATA' });
+  }
+  if (!bodyData.token || bodyData.token !== process.env.TOKEN) {
+    res.status(500);
+    return res.json({ err: true, msg: 'Invalid Token' });
+  }
+  if (
+    !bodyData.title ||
+    !bodyData.question ||
+    !bodyData.options ||
+    !bodyData.options.every((e) => e !== '' || e !== undefined)
+  ) {
+    res.status(500);
+    return res.json({ err: true, msg: 'Invalid Poll Data' });
+  }
   try {
-    const poll_id = uuidv4();
-
     const poll = new Poll({
-      poll_id: poll_id,
-      title: 'First pool',
-      main_question: 'What could happen if machines learned how to be “human”?',
-      options: [
-        {
-          id: '857732bc-3647-4051-b75c-fcbbb08db4f4',
-          count: 0,
-          text: 'It might as well be the end of the world.',
-        },
-        {
-          id: '85b2759b-6f90-492a-b072-303b142e0c44',
-          count: 0,
-          text: 'We could be best friends with them!!!',
-        },
-      ],
+      poll_id: uuidv4(),
+      title: bodyData.title,
+      main_question: bodyData.question,
+      options: bodyData.options.map((option) => ({
+        id: uuidv4(),
+        count: 0,
+        text: option.text,
+      })),
     });
 
     await poll.save();
@@ -95,13 +107,12 @@ app.get('/create', async (req, res, next) => {
     res.err({ msg: new Error('error creating POLL'), err: err });
   }
 });
-
 app.get('/vote_poll/:id/:vote', async (req, res, next) => {
   const poll_id = req.params.id;
   const vote_id = req.params.vote;
   if (!uuidPattern.test(poll_id) && !uuidPattern.test(vote_id)) {
     res.status(500);
-    res.json({ msg: 'invalid ids' });
+    res.json({ err: true, msg: 'invalid ids' });
   }
 
   const selectedPoll = await Poll.get({
