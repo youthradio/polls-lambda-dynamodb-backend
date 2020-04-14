@@ -13,16 +13,16 @@ module.exports = function (dynamodb) {
     readCapacityUnits: 1,
     writeCapacityUnits: 1,
   };
-  const options = {
+  const sessionOptions = {
     genid: function (req) {
       return uuidv4();
     },
     store: new DynamoDBStore(sessionStoreOptions),
     secret: process.env.COOKIE_SECRET,
-    cookie: { secure: !isDev },
+    cookie: { secure: !isDev},
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
   };
 
-  return { session, options };
+  return { session, sessionOptions };
 };

@@ -9,7 +9,7 @@ const config = require('./config'); // credentials
 const awsConfig = new AWS.Config(config);
 const dynamodb = new AWS.DynamoDB(awsConfig);
 
-const { session, options } = require('./config/sessionConfig')(dynamodb);
+const { session, sessionOptions } = require('./config/sessionConfig')(dynamodb);
 const Poll = require('./model/pollModel')(dynamodb);
 const { uuidPattern } = require('./utils');
 
@@ -20,7 +20,7 @@ const whitelist = [
 ];
 
 const corsOptionsDelegate = (req, callback) => {
-  console.log(req.header('Origin'));
+  console.log(req.header('Origin'), whitelist.includes(req.header('Origin')));
   const corsOptions = {
     origin: whitelist.includes(req.header('Origin')),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -33,12 +33,12 @@ const corsOptionsDelegate = (req, callback) => {
 
 const app = express();
 
-if (!process.env.MODE === 'dev') {
+if (!process.env.MODE === 'dev' || process.env.MODE === undefined) {
   app.set('trust proxy', 1); // trust first proxy
 }
 
 app.disable('x-powered-by');
-app.use(session(options));
+app.use(session(sessionOptions));
 app.use(cors(corsOptionsDelegate));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -62,7 +62,6 @@ app.get('/getAll', async (req, res, next) => {
     res.header('Content-Type', 'application/json');
     res.send(JSON.stringify(poll, null, 4));
   } catch (err) {
-    console.log(err);
     res.statusCode = 500;
     res.err({ msg: new Error('error creating POLL'), err: err });
   }
@@ -102,7 +101,6 @@ app.post('/create', async (req, res, next) => {
     await poll.save();
     res.json(poll);
   } catch (err) {
-    console.log(err);
     res.statusCode = 500;
     res.err({ msg: new Error('error creating POLL'), err: err });
   }
