@@ -14,6 +14,8 @@ const Poll = require('./model/pollModel')(dynamodb);
 const { uuidPattern } = require('./utils');
 
 const whitelist = [
+  'https://interactive.yr.media',
+  'https://youthradio.github.io',
   'http://localhost:3000',
   `http://localhost:${process.env.PORT}`,
   'https://radames.static.observableusercontent.com',
