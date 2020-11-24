@@ -12,11 +12,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "backend": "MODE=dev nodemon app.local.js",
     "claudia:update": "AWS_PROFILE=yri claudia update",
-    "claudia:deploy": "npm run generate-policy && AWS_PROFILE=yri claudia create --handler lambda.handler --deploy-proxy-api --region us-west-2 --policies policies --configure-db",
+    "claudia:deploy": "yarn generate-policy && AWS_PROFILE=yri claudia create --handler lambda.handler --deploy-proxy-api --region us-west-2 --policies policies --configure-db",
     "claudia:destroy": "AWS_PROFILE=yri claudia destroy",
     "claudia:reconfigure": "AWS_PROFILE=yri claudia update --configure-db",
-    "aws:create-table" : "AWS_PROFILE=yri aws dynamodb create-table --cli-input-json file://schemas/table.json --region us-west-2",
-    "generate-policy" : "node scripts/generatePolicy.js",
+    "aws:create-table": "AWS_PROFILE=yri aws dynamodb create-table --cli-input-json file://schemas/table.json --region us-west-2",
+    "generate-policy": "node scripts/generatePolicy.js",
     "generate-proxy": "claudia generate-serverless-express-proxy --express-module app"
   },
   "author": "",
@@ -30,7 +30,7 @@
     "dynamoose": "^1.11.1",
     "express": "^4.17.1",
     "express-session": "^1.17.0",
-    "uuid": "^7.0.3"
+    "uuid": "^8.3.1"
   },
   "devDependencies": {
     "claudia": "^5.12.0"
