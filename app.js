@@ -120,13 +120,13 @@ app.get('/vote_poll/:id/:vote', async (req, res, next) => {
   });
 
   // check if user has already voted
-  if (req.session.voted_polls && req.session.voted_polls.includes(poll_id)) {
+  if (req.session.voted_ids && req.session.voted_ids.includes(vote_id)) {
     res.header('Content-Type', 'application/json');
     res.send(JSON.stringify({ hasvoted: true, poll: selectedPoll }, null, 4));
     return;
   } else {
-    req.session.voted_polls = [];
-    req.session.voted_polls.push(poll_id);
+    req.session.voted_ids = [];
+    req.session.voted_ids.push(vote_id);
   }
 
   const options = selectedPoll.options.map((option) => {
